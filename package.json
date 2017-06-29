@@ -1,0 +1,30 @@
+{
+  "name": "blockstore",
+  "version": "0.0.1",
+  "description": "100% native block allocated high speed key/value file storage for JavaScript",
+  "engines": {},
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "test": "mocha test/index.js"
+  },
+   "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anywhichway/blockstore.git"
+  },
+  "keywords": [
+    "spreadsheet"
+  ],
+  "author": "Simon Y. Blackwell <syblackwell@anywhichway.com> (http://www.github.com/anywhichway)",
+  "bugs": {
+    "url": "https://github.com/anywhichway/blockstore/issues"
+  },
+  "homepage": "https://github.com/anywhichway/blockstore#readme",
+  "dependencies": {
+   
+  },
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "mocha": "^3.4.2"
+  }
+}
