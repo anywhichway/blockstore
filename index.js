@@ -50,13 +50,16 @@
 			});
 		};
 	
-	function BlockStore(path,keyProperty,clear) {
-		this.encoding = "utf8";
+	function BlockStore(path,clear=false,encoding="utf8") {
+		this.path = path;
+		this.encoding = encoding;
 		this.opened = false;
 		if(clear) this.clear();
 	}
-	BlockStore.prototype.alloc = async function(length,encoding="utf8") {
+	BlockStore.prototype.alloc = async function(length,encoding) {
+		encoding || (encoding = this.encoding);
 		let block;
+		encoding || (econding = this.encoding);
 		if(!this.alloc.size) {
 			this.alloc.size = Buffer.byteLength(blockString([0,0],encoding),encoding);
 			this.alloc.empty = bytePadEnd("null",this.alloc.size," ",encoding);
@@ -106,7 +109,8 @@
 		return this.keys.length;
 	}
 	// compress should only be used when offline, so synchronous
-	BlockStore.prototype.compress = function() {
+	BlockStore.prototype.compress = function(encoding) {
+		encoding || (encoding = this.encoding);
 		if(!this.opened) this.open();
 		if(this.keys.length===0) {
 			this.clear();
@@ -123,13 +127,13 @@
 				newblock[0] = this.storeSize;
 				newblock[2] = this.blocksSize;
 				let str = '"'+key+'":' + JSON.stringify(newblock)+",";
-				fs.writeSync(blocksfd,str,this.blocksSize,this.encoding); // should make this safer and copys to another file first
-				this.blocksSize += Buffer.byteLength(str,this.encoding);
+				fs.writeSync(blocksfd,str,this.blocksSize,encoding); // should make this safer and copys to another file first
+				this.blocksSize += Buffer.byteLength(str,encoding);
 				const buffer = Buffer.alloc(block[1]);
 				fs.readSync(this.storefd,buffer,0,block[1],block[0]);
 				str = buffer.toString(this.encoding);
-				fs.writeSync(storefd,str,this.storeSize,this.encoding); 
-				this.storeSize += Buffer.byteLength(str,this.encoding);
+				fs.writeSync(storefd,str,this.storeSize,encoding); 
+				this.storeSize += Buffer.byteLength(str,encoding);
 			}
 		}
 		fs.closeSync(storefd);
@@ -146,23 +150,25 @@
 		this.free = [];
 		this.freeSize = 0;
 	}
-	BlockStore.prototype.delete = async function(id) {
+	BlockStore.prototype.delete = async function(id,encoding) {
+		encoding || (encoding = this.encoding);
 		if(!this.opened) this.open();
 		const block = this.blocks[id];
 		if(block) {
-			const blanks = bytePadEnd("",block[1],this.encoding);
+			const blanks = bytePadEnd("",block[1],encoding);
 			delete this.blocks[id];
 			this.keys = Object.keys(this.blocks);
 			this.keys.splice(this.keys.indexOf(id),1);
 			await asyncyInline(fs,fs.write,this.storefd,blanks,block[0],"utf8"); // write blank padding
 			this.free.push(block);
 			let str = blockString(block,this.encoding)+",";
-			await asyncyInline(fs,fs.write,this.freefd,str,this.freeSize,this.encoding);
-			this.freeSize += Buffer.byteLength(str,this.encoding);
-			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],this.encoding),block[2],this.encoding);
+			await asyncyInline(fs,fs.write,this.freefd,str,this.freeSize,encoding);
+			this.freeSize += Buffer.byteLength(str,encoding);
+			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],this.encoding),block[2],encoding);
 		}
 	}
-	BlockStore.prototype.get = async function(id,block=[]) {
+	BlockStore.prototype.get = async function(id,encoding,block=[]) {
+		encoding || (encoding = this.encoding);
 		if(!this.opened) this.open();
 		const currentblock = this.blocks[id];
 		if(currentblock) {
@@ -178,7 +184,8 @@
 		return this.keys[number];
 	}
 	// open is synchronous, it is called very little and
-	BlockStore.prototype.open = function() { // also add a transactional file class <file>.json, <file>.queue.json, <file>.<line> (line currently processing), <file>.done.json (lines processed)
+	BlockStore.prototype.open = function(encoding) { // also add a transactional file class <file>.json, <file>.queue.json, <file>.<line> (line currently processing), <file>.done.json (lines processed)
+		encoding || (encoding = this.encoding);
 		let result;
 		//console.log(result)
 		try {
@@ -199,10 +206,10 @@
 		const freestat = fs.fstatSync(this.freefd),
 			blockstat = fs.fstatSync(this.blocksfd),
 			storestat = fs.fstatSync(this.storefd);
-		let blocks = fs.readFileSync(this.path + "/blocks.json",this.encoding);  // {<id>:{start:start,end:end,length:length}[,...]}
+		let blocks = fs.readFileSync(this.path + "/blocks.json",encoding);  // {<id>:{start:start,end:end,length:length}[,...]}
 		blocks.trim();
 		blocks.length===0 || (blocks = blocks.substring(0,blocks.length-1)); // remove trailing comma
-		let free = fs.readFileSync(this.path + "/free.json",this.encoding); // [{start:start,end:end,length:length}[,...]]
+		let free = fs.readFileSync(this.path + "/free.json",encoding); // [{start:start,end:end,length:length}[,...]]
 		if(free.length===0) {
 			this.free = [];
 		} else {
@@ -228,38 +235,39 @@
 		this.opened = true;
 		return true;
 	}
-	BlockStore.prototype.set = async function(id,data) {
+	BlockStore.prototype.set = async function(id,data,encoding) {
+		encoding || (encoding = this.encoding);
 		if(!this.opened) this.open();
 		const block = this.blocks[id],
 			blen = Buffer.byteLength(data, this.encoding);
 		if(block) { // if data already stored
-			const pdata = bytePadEnd(data,(block[1]),this.encoding);
+			const pdata = bytePadEnd(data,block[1],this.encoding);
 			if(blen <= block[1]) { // and update is same size or smaller
-				let result = await asyncyInline(fs,fs.write,this.storefd,pdata,block[0],this.encoding); // write the data with blank padding
+				let result = await asyncyInline(fs,fs.write,this.storefd,pdata,block[0],encoding); // write the data with blank padding
 				return; //continue;
 			}
 		} else {
 			this.keys.push(id);
 		}
-		const freeblock = await this.alloc(blen,this.encoding), // find a free block large enough
-			pdata = bytePadEnd(data,freeblock[1],this.encoding);
+		const freeblock = await this.alloc(blen,encoding), // find a free block large enough
+			pdata = bytePadEnd(data,freeblock[1],encoding);
 		this.storeSize += freeblock[1];
 		this.blocks[id] = freeblock; // update the blocks info
 		if(block) { // free old block which was too small, if there was one
-			const pdata = bytePadEnd("",(block[1]),this.encoding);
+			const pdata = bytePadEnd("",(block[1]),encoding);
 			this.free.push(block);
 			const blankblock = blockString(block,this.encoding)+",";
-			let result = await asyncyInline(fs,fs.write,this.storefd,pdata,block[0],this.encoding); // write blank padding
-			result = await asyncyInline(fs,fs.write,this.freefd,blankblock,this.freeSize,this.encoding);
+			let result = await asyncyInline(fs,fs.write,this.storefd,pdata,block[0],encoding); // write blank padding
+			result = await asyncyInline(fs,fs.write,this.freefd,blankblock,this.freeSize,encoding);
 			this.freeSize += Buffer.byteLength(blankblock,this.encoding);
 		}
-		await asyncyInline(fs,fs.write,this.storefd,pdata,freeblock[0],this.encoding); // write the data with blank padding
+		await asyncyInline(fs,fs.write,this.storefd,pdata,freeblock[0],encoding); // write the data with blank padding
 		freeblock.push(this.blocksSize); // store the offset of the key and its length in with itself
 		freeblock.push(Buffer.byteLength(id,this.encoding)+2); // +2 for quotes
 		const blockspec = '"'+id+'":'+JSON.stringify(freeblock)+",",
 			fposition = this.blockSize;
-		this.blocksSize += Buffer.byteLength(blockspec,this.encoding);
-		await asyncyInline(fs,fs.write,this.blocksfd,blockspec,fposition,this.encoding);
+		this.blocksSize += Buffer.byteLength(blockspec,encoding);
+		await asyncyInline(fs,fs.write,this.blocksfd,blockspec,fposition,encoding);
 	}
 	module.exports = BlockStore;
 }).call(this);
