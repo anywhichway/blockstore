@@ -159,12 +159,12 @@
 			delete this.blocks[id];
 			this.keys = Object.keys(this.blocks);
 			this.keys.splice(this.keys.indexOf(id),1);
-			await asyncyInline(fs,fs.write,this.storefd,blanks,block[0],"utf8"); // write blank padding
+			await asyncyInline(fs,fs.write,this.storefd,blanks,block[0],"utf8"); // write blanks to erase data
 			this.free.push(block);
 			let str = blockString(block,this.encoding)+",";
 			await asyncyInline(fs,fs.write,this.freefd,str,this.freeSize,encoding);
 			this.freeSize += Buffer.byteLength(str,encoding);
-			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],this.encoding),block[2],encoding);
+			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],this.encoding),block[2],encoding); // write blanks to erase key
 		}
 	}
 	BlockStore.prototype.get = async function(id,encoding,block=[]) {
@@ -254,7 +254,7 @@
 		this.storeSize += freeblock[1];
 		this.blocks[id] = freeblock; // update the blocks info
 		if(block) { // free old block which was too small, if there was one
-			const pdata = bytePadEnd("",(block[1]),encoding);
+			const pdata = bytePadEnd("",block[1],encoding);
 			this.free.push(block);
 			const blankblock = blockString(block,this.encoding)+",";
 			let result = await asyncyInline(fs,fs.write,this.storefd,pdata,block[0],encoding); // write blank padding
@@ -262,7 +262,7 @@
 			this.freeSize += Buffer.byteLength(blankblock,this.encoding);
 		}
 		await asyncyInline(fs,fs.write,this.storefd,pdata,freeblock[0],encoding); // write the data with blank padding
-		freeblock.push(this.blocksSize); // store the offset of the key and its length in with itself
+		freeblock.push(this.blocksSize); // store the offset of the key and its length with itself, we need this to erase keys
 		freeblock.push(Buffer.byteLength(id,this.encoding)+2); // +2 for quotes
 		const blockspec = '"'+id+'":'+JSON.stringify(freeblock)+",",
 			fposition = this.blockSize;

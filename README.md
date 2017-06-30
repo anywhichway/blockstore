@@ -97,6 +97,8 @@ Over the next few weeks unit tests will be added.
 
 # Release History (reverse chronological order)
 
+v0.0.3 Minor documentation update.
+
 v0.0.2 Added load tests and made the specification of encoding more regular. Documented.
 
 v0.0.1 Generalized from JSONBlockStore v0.0.1 which was extracted from ReasonDB v3.2

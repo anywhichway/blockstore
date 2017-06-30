@@ -3,7 +3,7 @@ const BlockStore = require("../index.js"),
 
 async function test() {
 	await bstore.open();
-	const testsize = 1000;
+	const testsize = 10000;
 	console.log("Test Size:",testsize);
 	let start = Date.now();
 	for(let i=0;i<testsize;i++) {
