@@ -42,7 +42,7 @@ A thin wrapper `JSONBlockstore` that automatically handles serializing and resto
 # Usage
 
 ```
-const BlockStore = require("../index.js"),
+const BlockStore = require("blockstore"),
 	bstore = new BlockStore("./test/data",true,"utf8"); // note, the directory must already exist
 
 await bstore.set("akey","test string"); // bstore will automatically open on the first attempt to read or write
