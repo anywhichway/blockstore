@@ -54,6 +54,7 @@
 		this.path = path;
 		this.encoding = encoding;
 		this.opened = false;
+		Object.defineProperty(this,"length",{enumerable:false,configurable:true,writable:false,value:function() { return this.count(); }});
 		if(clear) this.clear();
 	}
 	BlockStore.prototype.alloc = async function(length,encoding) {
@@ -167,6 +168,7 @@
 			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],this.encoding),block[2],encoding); // write blanks to erase key
 		}
 	}
+	BlockStore.prototype.removeItem = BlockStore.prototype.delete;
 	BlockStore.prototype.get = async function(id,encoding,block=[]) {
 		encoding || (encoding = this.encoding);
 		if(!this.opened) this.open();
@@ -179,6 +181,7 @@
 			return buffer;
 		}
 	}
+	BlockStore.prototype.getItem = BlockStore.prototype.get;
 	BlockStore.prototype.key = async function(number) {
 		if(!this.opened) this.open();
 		return this.keys[number];
@@ -269,5 +272,6 @@
 		this.blocksSize += Buffer.byteLength(blockspec,encoding);
 		await asyncyInline(fs,fs.write,this.blocksfd,blockspec,fposition,encoding);
 	}
+	BlockStore.prototype.setItem = BlockStore.prototype.set;
 	module.exports = BlockStore;
 }).call(this);

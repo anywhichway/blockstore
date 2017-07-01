@@ -1,12 +1,13 @@
 # BlockStore
 
-BlockStore provides block allocated, single file, key value storage for JavaScript and is written in JavaScript.
+BlockStore provides block allocated, single file, key value storage for JavaScript and is written in JavaScript. It can be used as a server side API compatible
+replacement for `localStorage`. Its API is multi-named so that it is also similar to `memcached` and `Redis`, i.e. `set` is the same as `setItem`.
 
 It is just 270 lines of code with zero dependencies, less than 10K uncompressed, 5.5K compressed, and 1.7K gzipped.
 
 Reads, writes, and deletes are all asynchronous.
 
-API is similar to `localStorage`.
+The standard API is similar to `localStorage`. The `localStorage` API can also be used.
 
 Tested at up to 5,000,000 small records and very short keys on an i5 8GN Win 10 machine with a non-SSD hard drive.
 
@@ -45,7 +46,7 @@ A thin wrapper `JSONBlockstore` that automatically handles serializing and resto
 const BlockStore = require("blockstore"),
 	bstore = new BlockStore("./test/data",true,"utf8"); // note, the directory must already exist
 
-await bstore.set("akey","test string"); // bstore will automatically open on the first attempt to read or write
+await bstore.setItem("akey","test string"); // bstore will automatically open on the first attempt to read or write
 
 const data = await bstore.get("akey");
 	
@@ -67,6 +68,8 @@ The core API is documented below. Currently you must review the code for further
 `await <instance>.set(key,bufferOrString)` Adds the `bufferOrString` to storage with the `key`.
 
 `<instance>.compress()` Reclaims disk storage by eliminating blank space from deleted or updated records.
+
+For compatibility with `localStorage` the property `length` and the methods `getItem`, `removeItem`, and `setItem` are also supported.
 
 
 # Internals
@@ -97,8 +100,10 @@ Over the next few weeks unit tests will be added.
 
 # Release History (reverse chronological order)
 
-v0.0.3 Minor documentation update.
+v0.0.4 2017-07-01 Made API optionally compatible with `localStorage`
 
-v0.0.2 Added load tests and made the specification of encoding more regular. Documented.
+v0.0.3 2017-06-30 Minor documentation update.
 
-v0.0.1 Generalized from JSONBlockStore v0.0.1 which was extracted from ReasonDB v3.2
+v0.0.2 2017-06-30 Added load tests and made the specification of encoding more regular. Documented.
+
+v0.0.1 2017-06-29 Generalized from JSONBlockStore v0.0.1 which was extracted from ReasonDB v3.2

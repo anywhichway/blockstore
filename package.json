@@ -1,6 +1,6 @@
 {
   "name": "blockstore",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "100% native JavaScript, block allocated high speed key/value file store",
   "engines": {},
   "license": "MIT",
@@ -13,7 +13,7 @@
     "url": "git+https://github.com/anywhichway/blockstore.git"
   },
   "keywords": [
-    "filestore, database, key-value, localstorage"
+    "filestore, database, key-value, localstorage, JSONBlockStore"
   ],
   "author": "Simon Y. Blackwell <syblackwell@anywhichway.com> (http://www.github.com/anywhichway)",
   "bugs": {
