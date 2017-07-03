@@ -1,6 +1,6 @@
 {
   "name": "blockstore",
-  "version": "0.0.4",
+  "version": "0.0.8",
   "description": "100% native JavaScript, block allocated high speed key/value file store",
   "engines": {},
   "license": "MIT",
@@ -8,7 +8,7 @@
   "scripts": {
     "test": "mocha test/index.js"
   },
-   "repository": {
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/anywhichway/blockstore.git"
   },
@@ -20,9 +20,7 @@
     "url": "https://github.com/anywhichway/blockstore/issues"
   },
   "homepage": "https://github.com/anywhichway/blockstore#readme",
-  "dependencies": {
-   
-  },
+  "dependencies": {},
   "devDependencies": {
     "chai": "^4.0.2",
     "mocha": "^3.4.2"

@@ -5,14 +5,14 @@
 	
 	const fs = require("fs"),
 		readline = require("readline"),
+		bytePadEnd = (str,length,pad,encoding="utf8") => {
+			const needed = length - Buffer.byteLength(str,encoding);
+			if(needed>0) { return str + Buffer.alloc(needed," ",encoding).toString(encoding); }
+			return str;
+		},
 		blockString = (block,encoding="utf8") => {
 			// 20 is the length of the large number in JavaScript
 			return "[" + bytePadEnd(block[0]+"",20," ",encoding) + "," + bytePadEnd(block[1]+"",20," ",encoding) + "]";
-		},
-		bytePadEnd = (str,length,pad,encoding="utf8") => {
-			const needed = length - Buffer.byteLength(str,encoding);
-			if(needed>0) return str + Buffer.alloc(needed," ",encoding).toString(encoding);
-			return str;
 		},
 		asyncyInline = (thisArg,f,...args) => {
 			const cb = (typeof(args[args.length-1])==="function" ? args.pop() : null);
@@ -54,8 +54,8 @@
 		this.path = path;
 		this.encoding = encoding;
 		this.opened = false;
-		Object.defineProperty(this,"length",{enumerable:false,configurable:true,writable:false,value:function() { return this.count(); }});
-		if(clear) this.clear();
+		Object.defineProperty(this,"length",{enumerable:false,configurable:true,get:function() { if(!this.opened) { this.open(); } return this.keys.length; },set:function() { throw new Error("BlockStore length is read-only") }});
+		if(clear) { this.clear(); }
 	}
 	BlockStore.prototype.alloc = async function(length,encoding) {
 		encoding || (encoding = this.encoding);
@@ -65,7 +65,7 @@
 			this.alloc.size = Buffer.byteLength(blockString([0,0],encoding),encoding);
 			this.alloc.empty = bytePadEnd("null",this.alloc.size," ",encoding);
 		}
-		for(var i=0;i<this.free.length;i++) {
+		for(let i=0;i<this.free.length;i++) {
 			block = this.free[i];
 			if(block && block[1]>=length) {
 				let position = ((this.alloc.size+1) * i);
@@ -82,13 +82,13 @@
 		this.close();
 		try {
 			fs.unlinkSync(this.path + "/free.json");
-		} catch(e) { }
+		} catch(e) { true; } // ignore if not there
 		try {
 			fs.unlinkSync(this.path + "/blocks.json");
-		} catch(e) { }
+		} catch(e) { true; } // ignore if not there
 		try {
 			fs.unlinkSync(this.path + "/store.json");
-		} catch(e) { }
+		} catch(e) { true; } // ignore if not there
 		this.freeSize = 0;
 		this.blocksSize = 0;
 		this.storeSize = 0;
@@ -106,16 +106,23 @@
 		}
 	}
 	BlockStore.prototype.count = async function count() {
-		if(!this.opened) this.open();
+		if(!this.opened) { this.open(); }
 		return this.keys.length;
 	}
 	// compress should only be used when offline, so synchronous
 	BlockStore.prototype.compress = function(encoding) {
 		encoding || (encoding = this.encoding);
-		if(!this.opened) this.open();
+		const result = {before:{free:0,blocks:0,store:0},after:{free:0,blocks:0,store:0}};
+		if(!this.opened) { this.open(); }
+		let stats = fs.fstatSync(this.freefd);
+		result.before.free = stats.size;
+		stats = fs.fstatSync(this.blocksfd);
+		result.before.blocks = stats.size;
+		stats = fs.fstatSync(this.storefd);
+		result.before.store = stats.size;
 		if(this.keys.length===0) {
 			this.clear();
-			return;
+			return result;
 		}
 		this.blocksSize = 0;
 		this.storeSize = 0;
@@ -150,10 +157,17 @@
 		fs.ftruncateSync(this.freefd,0);
 		this.free = [];
 		this.freeSize = 0;
+		stats = fs.fstatSync(this.freefd);
+		result.after.free = stats.size;
+		stats = fs.fstatSync(this.blocksfd);
+		result.after.blocks = stats.size;
+		stats = fs.fstatSync(this.storefd);
+		result.after.store = stats.size;
+		return result;
 	}
 	BlockStore.prototype.delete = async function(id,encoding) {
 		encoding || (encoding = this.encoding);
-		if(!this.opened) this.open();
+		if(!this.opened) { this.open(); }
 		const block = this.blocks[id];
 		if(block) {
 			const blanks = bytePadEnd("",block[1],encoding);
@@ -166,12 +180,14 @@
 			await asyncyInline(fs,fs.write,this.freefd,str,this.freeSize,encoding);
 			this.freeSize += Buffer.byteLength(str,encoding);
 			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],this.encoding),block[2],encoding); // write blanks to erase key
+			return true;
 		}
+		return false;
 	}
 	BlockStore.prototype.removeItem = BlockStore.prototype.delete;
 	BlockStore.prototype.get = async function(id,encoding,block=[]) {
 		encoding || (encoding = this.encoding);
-		if(!this.opened) this.open();
+		if(!this.opened) { this.open(); }
 		const currentblock = this.blocks[id];
 		if(currentblock) {
 			block[0] = currentblock[0];
@@ -183,7 +199,7 @@
 	}
 	BlockStore.prototype.getItem = BlockStore.prototype.get;
 	BlockStore.prototype.key = async function(number) {
-		if(!this.opened) this.open();
+		if(!this.opened) { this.open(); }
 		return this.keys[number];
 	}
 	// open is synchronous, it is called very little and
@@ -218,8 +234,8 @@
 		} else {
 			//console.log(free)
 			free = free.trim();
-			if(free[0]===",") free = free.substring(1);
-			if(free[free.length-1]===",") free = free.substring(0,free.length-1);
+			if(free[0]===",") { free = free.substring(1); }
+			if(free[free.length-1]===",") { free = free.substring(0,free.length-1); }
 			try {
 				this.free= JSON.parse("["+free+"]");
 			} catch(e) {
@@ -240,7 +256,7 @@
 	}
 	BlockStore.prototype.set = async function(id,data,encoding) {
 		encoding || (encoding = this.encoding);
-		if(!this.opened) this.open();
+		if(!this.opened) { this.open(); }
 		const block = this.blocks[id],
 			blen = Buffer.byteLength(data, this.encoding);
 		if(block) { // if data already stored
