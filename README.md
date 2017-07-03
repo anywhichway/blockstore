@@ -1,5 +1,7 @@
 # blockstore
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5b086f3a8c4a4bc2b419dd61578dc810)](https://www.codacy.com/app/syblackwell/blockstore?utm_source=github.com&utm_medium=referral&utm_content=anywhichway/blockstore&utm_campaign=badger)
+
 `blockstore` provides block allocated, single file, key value storage for JavaScript and is written in JavaScript. It can be used as a server side API compatible
 replacement for `localStorage`. Its API is multi-named so that it is also similar to `memcached` and `Redis`, i.e. `set` is the same as `setItem`.
 
