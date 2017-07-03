@@ -102,6 +102,8 @@ Over the next few weeks unit tests will be added.
 
 # Release History (reverse chronological order)
 
+v0.0.8 2017-07-03 Codacy driven style improvements. Fixed a typo related to file encoding flag. Any users employing other than default `utf8` encoding should upgrade.
+
 v0.0.7 2017-07-03 Added unit tests. `delete` now returns `true` if the key existed and `false` if it did not. `compress` now returns before and after file sizes in an object.
 
 v0.0.5 2017-07-01 Added `length` for `localStorage`
