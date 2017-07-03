@@ -1,9 +1,11 @@
 # blockstore
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/5b086f3a8c4a4bc2b419dd61578dc810)](https://www.codacy.com/app/syblackwell/blockstore?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=anywhichway/blockstore&amp;utm_campaign=Badge_Grade)
+
 `blockstore` provides block allocated, single file, key value storage for JavaScript and is written in JavaScript. It can be used as a server side API compatible
 replacement for `localStorage`. Its API is multi-named so that it is also similar to `memcached` and `Redis`, i.e. `set` is the same as `setItem`.
 
-It is just 270 lines of code with zero dependencies, less than 10K uncompressed, 5.5K compressed, and 1.7K gzipped.
+It is just 290 lines of code with zero dependencies, less than 10K uncompressed, 6K compressed, and 2K gzipped.
 
 Reads, writes, and deletes are all asynchronous.
 
@@ -52,7 +54,7 @@ const data = await bstore.get("akey");
 	
 ```
 
-The core API is documented below. Currently you must review the code for further functionality:
+The core API is documented below. Currently you must review the code or unit tests for further functionality:
 
 
 `new BlockStore(path,clear=false,encoding="utf8")` If `clear=true` the existing data will be deleted.

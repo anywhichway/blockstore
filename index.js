@@ -38,14 +38,14 @@
 							// assume a function that returns a value is not one that invokes a callback
 							// there are exceptions, but the programmer will need to handle those
 							if(outerresult!=null) {
-								if(outerresult instanceof Promise) { outerresult.then(result => resolve({result})); }
+								if(outerresult instanceof Promise) { outerresult.then((result) => resolve({result})); }
 								else if(outerresult instanceof Error) { resolve({err:outerresult}); }
 								else { resolve({result:outerresult}); }
 							}
 						});
 					}
 				} catch(err) {
-					resolve({err,args})
+					resolve({err,args});
 				}
 			});
 		};
