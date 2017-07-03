@@ -1,5 +1,5 @@
 (function() {
-	"use strict"
+	"use strict";
 
 	// enhance to auto-create directory
 	
@@ -19,7 +19,7 @@
 			return new Promise((resolve,reject) => {
 				try {
 					let outerresult = f.call(thisArg,...args,(err,result) => {
-						outerresult = undefined;
+						outerresult = null;
 						if(err) {
 							resolve({err,args,result});
 						} else {
@@ -37,10 +37,10 @@
 						setTimeout(() => {
 							// assume a function that returns a value is not one that invokes a callback
 							// there are exceptions, but the programmer will need to handle those
-							if(outerresult!==undefined) {
-								if(outerresult instanceof Promise) outerresult.then(result => resolve({result}));
-								else if(outerresult instanceof Error) resolve({err:outerresult});
-								else resolve({result:outerresult});
+							if(outerresult!=null) {
+								if(outerresult instanceof Promise) { outerresult.then(result => resolve({result})); }
+								else if(outerresult instanceof Error) { resolve({err:outerresult}); }
+								else { resolve({result:outerresult}); }
 							}
 						});
 					}
@@ -54,13 +54,13 @@
 		this.path = path;
 		this.encoding = encoding;
 		this.opened = false;
-		Object.defineProperty(this,"length",{enumerable:false,configurable:true,get:function() { if(!this.opened) { this.open(); } return this.keys.length; },set:function() { throw new Error("BlockStore length is read-only") }});
+		Object.defineProperty(this,"length",{enumerable:false,configurable:true,get:function() { if(!this.opened) { this.open(); } return this.keys.length; },set:function() { throw new Error("BlockStore length is read-only"); }});
 		if(clear) { this.clear(); }
 	}
 	BlockStore.prototype.alloc = async function(length,encoding) {
 		encoding || (encoding = this.encoding);
 		let block;
-		encoding || (econding = this.encoding);
+		encoding || (encoding = this.encoding);
 		if(!this.alloc.size) {
 			this.alloc.size = Buffer.byteLength(blockString([0,0],encoding),encoding);
 			this.alloc.empty = bytePadEnd("null",this.alloc.size," ",encoding);
