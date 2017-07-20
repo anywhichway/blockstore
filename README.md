@@ -11,27 +11,43 @@ Reads, writes, and deletes are all asynchronous.
 
 The standard API is similar to `localStorage`. The `localStorage` API can also be used; however, currently no events are emmited.
 
-Tested at up to 5,000,000 small records and keys of up to 15 characters on an i5 8GN Win 10 machine with a non-SSD hard drive.
+Tested at up to 10,000,000 records of 1024 bytes (i.e. 1K) and keys of up to 16 characters on an i5 8GB Win 10 machine with a non-SSD hard drive.
 
-Performance is immune to record count at the limits of current testing. A testament more to the Chrome v8 engine hash lookup than anything else:
+Performance is impacted by record at large multiples of records, e.g. at records count goes up by millions. (A testament more to the Chrome v8 engine hash lookup than anything else).
+Key size has an impact up to a length of 6. Small keys are up to twice as fast as the performance numbers below for 8 character keys. Other variances are probably due to garbage collection.
 
-```
-Test Size: 5000000
-Write Records Sec: 13236
-Read Records Sec: 31846
-```
+With caching:
 
 ```
-Test Size: 2000000
-Write Records Sec: 13078
-Read Records Sec: 29952
+Test Size: 1,000,000 Key Size: 8
+Write Records Sec: 17,513
+Cached Read Records Sec: 665,336
+Uncached Read Records Sec: 31,460
 ```
 
 ```
-Test Size: 10000
-Write Records Sec: 13140
-Read Records Sec: 32258
+Test Size: 2,000,000 Key Size: 8
+Write Records Sec: 17,078
+Cached Read Records Sec: 581,395
+Uncached Read Records Sec: 31,068
 ```
+
+```
+Test Size: 5,000,000 Key Size: 8
+Write Records Sec: 18,701
+Cached Read Records Sec: 495,835
+Uncached Read Records Sec: 28,731
+```
+
+Without caching:
+
+```
+Test Size: 10,000,000 Key Size: 8
+Write Records Sec: 19,500
+Uncached Read Records Sec: 23,624
+```
+
+
 
 
 # Installation
@@ -57,13 +73,15 @@ const data = await bstore.get("akey");
 The core API is documented below. Currently you must review the code or unit tests for further functionality:
 
 
-`new BlockStore(path,clear=false,encoding="utf8")` If `clear=true` the existing data will be deleted.
+`new BlockStore(path,clear=false,encoding="utf8",cache=true)` If `clear=true` the existing data will be deleted.
 
 `const cnt = await <instance>.count()` Returns the number of keys in the store.
 
 `await <instance>.delete(key)` Deletes the data associated with the `key`. Returns `true` is keys existed and `false` if it did not.
 
 `const k = await <instance>.key(number)` Returns the key at index `number`.
+
+`<instance>.flush(id)` Flushes the cache for the `id`. If no `id` is provided, the entire cache is flushed. If caching is turned on, returns the hit count for `id` or the average hit count, otherwise `undefined`.
 
 `Buffer buff = await <instance>.get(key)` Returns a `Buffer` with the contents stored at the `key`.
 
@@ -72,6 +90,15 @@ The core API is documented below. Currently you must review the code or unit tes
 `<instance>.compress()` Reclaims disk storage by eliminating blank space from deleted or updated records. Returns an object with before and after sizes.
 
 For compatibility with `localStorage` the property `length` and the methods `getItem`, `removeItem`, and `setItem` are also supported.
+
+# Caching
+
+BlockStore holds all keys in memory and any caching wrapper would also need to hold keys in memory. Basic cache management requires only 10 lines of code, so it was added to BlockStore v0.0.9
+to help reduce ultimate code size and also memory load due to the duplication of keys in RAM in a high read environment. Currently, BlockStore does not automatically flush cache entries
+in low memory situations.
+
+Caching is on by default. It can be turned off by setting `<instance>.cache = false`. To free memory, flush the cache, `<instance>.flush()`, immediately before or after turning caching
+off.
 
 
 # Internals
@@ -96,11 +123,10 @@ Note, we are of the opinion that caching, JSON management, etc. should be done b
 
 And, of course, perhaps someone can make this smaller and faster.
 
-# Roadmap
-
-Over the next few weeks unit tests will be added.
 
 # Release History (reverse chronological order)
+
+v0.0.9 2017-07-19 Added caching.
 
 v0.0.8 2017-07-03 Codacy driven style improvements. Fixed a typo related to file encoding flag. Any users employing other than default `utf8` encoding should upgrade.
 

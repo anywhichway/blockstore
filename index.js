@@ -50,10 +50,11 @@
 			});
 		};
 	
-	function BlockStore(path,clear=false,encoding="utf8") {
+	function BlockStore(path,clear=false,encoding="utf8",cache=true) {
 		this.path = path;
 		this.encoding = encoding;
 		this.opened = false;
+		this.cache = cache;
 		Object.defineProperty(this,"length",{enumerable:false,configurable:true,get:function() { if(!this.opened) { this.open(); } return this.keys.length; },set:function() { throw new Error("BlockStore length is read-only"); }});
 		if(clear) { this.clear(); }
 	}
@@ -74,7 +75,7 @@
 				return block;
 			}
 		}
-		let start = (this.storeSize===0 ? 0 : this.storeSize+1);
+		let start = (this.storeSize===0 ? 1 : this.storeSize+1);
 		return [start, length];
 	}
 	// clear is synchronous, it is called very little
@@ -185,11 +186,37 @@
 		return false;
 	}
 	BlockStore.prototype.removeItem = BlockStore.prototype.delete;
+	BlockStore.prototype.flush = function(id) {
+		if(this.cache) {
+			let hits = 0;
+			if(id) {
+				const block = this.blocks[id];
+				block.cache.value = null;
+				hits = block.cache.hits;
+				block.cache.hits = 0;
+			} else {
+				let count = 0;
+				for(let id in this.blocks) {
+					count++;
+					const block = this.blocks[id];
+					block.cache.value = null;
+					hits += block.cache.hits;
+					block.cache.hits = 0;
+				}
+				hits = hits / count;
+			}
+			return hits;
+		}
+	}
 	BlockStore.prototype.get = async function(id,encoding,block=[]) {
 		encoding || (encoding = this.encoding);
 		if(!this.opened) { this.open(); }
 		const currentblock = this.blocks[id];
 		if(currentblock) {
+			if(this.cache && currentblock.cache.value) {
+				currentblock.cache.hits++;
+				return currentblock.cache.value;
+			}
 			block[0] = currentblock[0];
 			block[1] = currentblock[1];
 			const buffer = Buffer.alloc(block[1]);
@@ -262,6 +289,7 @@
 		if(block) { // if data already stored
 			const pdata = bytePadEnd(data,block[1],this.encoding);
 			if(blen <= block[1]) { // and update is same size or smaller
+				!this.cache || (block.cache.value = data);
 				let result = await asyncyInline(fs,fs.write,this.storefd,pdata,block[0],encoding); // write the data with blank padding
 				return; //continue;
 			}
@@ -270,10 +298,12 @@
 		}
 		const freeblock = await this.alloc(blen,encoding), // find a free block large enough
 			pdata = bytePadEnd(data,freeblock[1],encoding);
+		!this.cache || Object.defineProperty(freeblock,"cache",{enumerable:false,configurable:true,writable:true,value:{value:data,hits:0}});
 		this.storeSize += freeblock[1];
 		this.blocks[id] = freeblock; // update the blocks info
 		if(block) { // free old block which was too small, if there was one
 			const pdata = bytePadEnd("",block[1],encoding);
+			!this.cache || delete block.cache;
 			this.free.push(block);
 			const blankblock = blockString(block,this.encoding)+",";
 			let result = await asyncyInline(fs,fs.write,this.storefd,pdata,block[0],encoding); // write blank padding
