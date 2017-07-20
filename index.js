@@ -213,7 +213,7 @@
 		if(!this.opened) { this.open(); }
 		const currentblock = this.blocks[id];
 		if(currentblock) {
-			if(this.cache && currentblock.cache.value) {
+			if(this.cache && currentblock.cache && currentblock.cache.value) {
 				currentblock.cache.hits++;
 				return currentblock.cache.value;
 			}
@@ -221,6 +221,12 @@
 			block[1] = currentblock[1];
 			const buffer = Buffer.alloc(block[1]);
 			await asyncyInline(fs,fs.read,this.storefd,buffer,0,block[1],block[0]);
+			if(this.cache) {
+				if(!currentblock.cache) {
+					Object.defineProperty(currentblock,"cache",{enumerable:false,configurable:true,writable:true,value:{hits:1}});
+				}
+				currentblock.cache.value = buffer;
+			}
 			return buffer;
 		}
 	}

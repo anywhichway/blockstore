@@ -126,6 +126,8 @@ And, of course, perhaps someone can make this smaller and faster.
 
 # Release History (reverse chronological order)
 
+v0.0.10 2017-07-19 Fixed issue related to not adding cache property to blocks when first loaded.
+
 v0.0.9 2017-07-19 Added caching.
 
 v0.0.8 2017-07-03 Codacy driven style improvements. Fixed a typo related to file encoding flag. Any users employing other than default `utf8` encoding should upgrade.
