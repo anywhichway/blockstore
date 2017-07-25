@@ -5,7 +5,7 @@
 `blockstore` provides block allocated, single file, key value storage for JavaScript and is written in JavaScript. It can be used as a server side API compatible
 replacement for `localStorage`. Its API is multi-named so that it is also similar to `memcached` and `Redis`, i.e. `set` is the same as `setItem`.
 
-It is just 290 lines of code with zero dependencies, less than 10K uncompressed, 6K compressed, and 2K gzipped.
+Less than 350 lines of code with zero dependencies, 12K uncompressed, 7K compressed, and 2K gzipped.
 
 Reads, writes, and deletes are all asynchronous.
 
@@ -13,7 +13,7 @@ The standard API is similar to `localStorage`. The `localStorage` API can also b
 
 Tested at up to 10,000,000 records of 1024 bytes (i.e. 1K) and keys of up to 16 characters on an i5 8GB Win 10 machine with a non-SSD hard drive.
 
-Performance is impacted at large multiples of records, e.g. as record counts goe up by millions. (A testament more to the Chrome v8 engine hash lookup than anything else).
+Performance is impacted at large multiples of records, e.g. as record counts goes up by millions. (A testament more to the Chrome v8 engine hash lookup than anything else).
 Key size has an impact up to a length of 6. Small keys are up to twice as fast as the performance numbers below for 8 character keys. Other variances are probably due to garbage collection.
 
 With caching:
@@ -119,18 +119,18 @@ We are seeking collaborators to enhance this module. A recovery program is neede
 
 We also have some thoughts about how multi-record transactions might be added.
 
-Note, we are of the opinion that caching, JSON management, etc. should be done by wrapper classes to keep the core small.
-
 And, of course, perhaps someone can make this smaller and faster.
 
 
 # Release History (reverse chronological order)
 
+v0.1.2 2017-07-23 Documentation updates.
+
 v0.1.1 2017-07-23 Possible breaking change! Converted `clear` to async, although underlying implementaion is still synchronous. Makes `blockstore` more compatible/replaceable wih other storage.
 
 v0.0.10 2017-07-19 Fixed issue related to not adding cache property to blocks when first loaded.
 
-v0.0.9 2017-07-19 Added caching.
+v0.0.9 2017-07-19 Added caching. After considerable thought we decided to add just a few lines of code to support caching in order to save the duplication of in memory record keys with a separate cache.
 
 v0.0.8 2017-07-03 Codacy driven style improvements. Fixed a typo related to file encoding flag. Any users employing other than default `utf8` encoding should upgrade.
 

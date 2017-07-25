@@ -55,7 +55,7 @@
 		this.encoding = encoding;
 		this.opened = false;
 		this.cache = cache;
-		Object.defineProperty(this,"length",{enumerable:false,configurable:true,get:function() { if(!this.opened) { this.open(); } return this.keys.length; },set:function() { throw new Error("BlockStore length is read-only"); }});
+		Object.defineProperty(this,"length",{enumerable:false,configurable:true,get() { if(!this.opened) { this.open(); } return this.keys.length; },set() { throw new Error("BlockStore length is read-only"); }});
 		if(clear) { this.clear(); }
 	}
 	BlockStore.prototype.alloc = async function(length,encoding) {
