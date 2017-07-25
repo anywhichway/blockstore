@@ -13,7 +13,7 @@ The standard API is similar to `localStorage`. The `localStorage` API can also b
 
 Tested at up to 10,000,000 records of 1024 bytes (i.e. 1K) and keys of up to 16 characters on an i5 8GB Win 10 machine with a non-SSD hard drive.
 
-Performance is impacted by record at large multiples of records, e.g. at records count goes up by millions. (A testament more to the Chrome v8 engine hash lookup than anything else).
+Performance is impacted at large multiples of records, e.g. as record counts goe up by millions. (A testament more to the Chrome v8 engine hash lookup than anything else).
 Key size has an impact up to a length of 6. Small keys are up to twice as fast as the performance numbers below for 8 character keys. Other variances are probably due to garbage collection.
 
 With caching:
@@ -125,6 +125,8 @@ And, of course, perhaps someone can make this smaller and faster.
 
 
 # Release History (reverse chronological order)
+
+v0.1.1 2017-07-23 Possible breaking change! Converted `clear` to async, although underlying implementaion is still synchronous. Makes `blockstore` more compatible/replaceable wih other storage.
 
 v0.0.10 2017-07-19 Fixed issue related to not adding cache property to blocks when first loaded.
 

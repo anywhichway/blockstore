@@ -78,8 +78,8 @@
 		let start = (this.storeSize===0 ? 1 : this.storeSize+1);
 		return [start, length];
 	}
-	// clear is synchronous, it is called very little
-	BlockStore.prototype.clear = function() {
+	// althoug it looks asynchronous, clear is synchronous, it is called very little
+	BlockStore.prototype.clear = async function() {
 		this.close();
 		try {
 			fs.unlinkSync(this.path + "/free.json");
