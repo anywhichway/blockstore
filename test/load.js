@@ -1,10 +1,13 @@
 const BlockStore = require("../index.js"),
-	storage = new BlockStore("./test/data",true,"utf8",true),
+	storage = new BlockStore("./test/data",{clear:true}),
+	//rostorage = new BlockStore("./test/data",{clear:true}),
 	keygen = (length) => {
 		const base = Math.random()+"";
 		return "k"+base.substring(2,length+1);
 	};
 
+	storage.open();
+	//rostorage.open("utf8",true);
 // may need to run this file with "node --max-old-space-size=8192 test/load.js"
 async function test() {
 	const testsize = 100000,

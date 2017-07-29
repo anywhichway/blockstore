@@ -2,10 +2,13 @@
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5b086f3a8c4a4bc2b419dd61578dc810)](https://www.codacy.com/app/syblackwell/blockstore?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=anywhichway/blockstore&amp;utm_campaign=Badge_Grade)
 
-`blockstore` provides block allocated, single file, key value storage for JavaScript and is written in JavaScript. It can be used as a server side API compatible
-replacement for `localStorage`. Its API is multi-named so that it is also similar to `memcached` and `Redis`, i.e. `set` is the same as `setItem`.
+`blockstore` provides block allocated, single file, key value storage for JavaScript and is written in JavaScript. 
 
-Less than 350 lines of code with zero dependencies, 12K uncompressed, 7K compressed, and 2K gzipped.
+Its API is multi-named so that it is also similar to `memcached` and `Redis`, i.e. `set` is the same as `setItem`.
+
+It can be used as a server side API compatible replacement for `localStorage` or `LevelUP`.
+
+Less than 275 lines of code with zero dependencies, 10K uncompressed, 5K compressed, and 2K gzipped.
 
 Reads, writes, and deletes are all asynchronous.
 
@@ -73,7 +76,8 @@ const data = await bstore.get("akey");
 The core API is documented below. Currently you must review the code or unit tests for further functionality:
 
 
-`new BlockStore(path,clear=false,encoding="utf8",cache=true)` If `clear=true` the existing data will be deleted.
+`new BlockStore(path,options:{clear:false,encoding:"utf8",cache:true,compress:{keys:true,data:false}})` If `clear=true` the existing data will be deleted. If `compress` is missing or `compress.keys` is true, keys will be compressed at start-up. If both `compress.keys` and `compress.data` are true then keys and data will be compressed at start-up. It is not possible to compress data
+without also compressing keys.
 
 `const cnt = await <instance>.count()` Returns the number of keys in the store.
 
@@ -103,15 +107,12 @@ off.
 
 # Internals
 
-A BlockStore consists of three files:
+A BlockStore consists of two files:
 
 1) `store.json` which stores the actual data. If encoded as `utf8`, this can actually be viewed in a text editor.
 2) `blocks.json` which stores the keys and offsets and sizes of data blocks in `store.json` as well as offsets and sizes of keys in itself.
-3) `free.json` which stores arrays pointing to free spaces in `store.json`.
 
-Note, `free.json` may look like it has a bunch of unused space; however, the arrays are of fixed byte size to store the largest integers supported in JavaScript.
-
-The contents of `blocks.json` and `free.json` are kept in memory at all times, although only written incrementally.
+The contents of `blocks.json` is kept in memory at all times, although it is written incrementally as updated.
 
 # Collaboration
 
@@ -123,6 +124,9 @@ And, of course, perhaps someone can make this smaller and faster.
 
 
 # Release History (reverse chronological order)
+
+v0.1.3 2017-07-28 Simplified architecture and API to increase speed and decrease both library and runtime memory usage by removing free space tracking and encoding arguments to functions other than constructor. Store keys will autocompress on start or command. `Blockstore` constructor now takes a location and an options object for arguments. Storage path is automatically
+created if it does not exist. This is also in preparation for sharding mode operation.
 
 v0.1.2 2017-07-23 Documentation updates.
 
