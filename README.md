@@ -85,13 +85,13 @@ without also compressing keys.
 
 `const k = await <instance>.key(number)` Returns the key at index `number`.
 
-`<instance>.flush(id)` Flushes the cache for the `id`. If no `id` is provided, the entire cache is flushed. If caching is turned on, returns the hit count for `id` or the average hit count, otherwise `undefined`.
+`await <instance>.flush(id)` Flushes the cache for the `id`. If no `id` is provided, the entire cache is flushed. If caching is turned on, returns the hit count for `id` or the average hit count, otherwise `undefined`.
 
 `Buffer buff = await <instance>.get(key)` Returns a `Buffer` with the contents stored at the `key`.
 
 `await <instance>.set(key,bufferOrString)` Adds the `bufferOrString` to storage with the `key`.
 
-`<instance>.compress()` Reclaims disk storage by eliminating blank space from deleted or updated records. Returns an object with before and after sizes.
+`await <instance>.compress()` Reclaims disk storage by eliminating blank space from deleted or updated records. Returns an object with before and after sizes.
 
 For compatibility with `localStorage` the property `length` and the methods `getItem`, `removeItem`, and `setItem` are also supported.
 
@@ -125,8 +125,10 @@ And, of course, perhaps someone can make this smaller and faster.
 
 # Release History (reverse chronological order)
 
+v0.1.4 2017-07-29 Entire API now asynchronus to simplify usage and expose an interface compatible with distributed sharding/clustering. 
+
 v0.1.3 2017-07-28 Simplified architecture and API to increase speed and decrease both library and runtime memory usage by removing free space tracking and encoding arguments to functions other than constructor. Store keys will autocompress on start or command. `Blockstore` constructor now takes a location and an options object for arguments. Storage path is automatically
-created if it does not exist. This is also in preparation for sharding mode operation.
+created if it does not exist. This is also in preparation for sharding/clustering mode operation.
 
 v0.1.2 2017-07-23 Documentation updates.
 

@@ -1,5 +1,5 @@
 const BlockStore = require("../index.js"),
-	storage = new BlockStore("./test/data",{clear:true}),
+	storage = new BlockStore("./test/data",{clear:true}), //./test/data d:/test
 	//rostorage = new BlockStore("./test/data",{clear:true}),
 	keygen = (length) => {
 		const base = Math.random()+"";

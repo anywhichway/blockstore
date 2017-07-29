@@ -1,16 +1,5 @@
 (function() {
 	"use strict";
-
-	// enhance to auto-create directory
-	
-	// all child processes should open all store.json files for read and just one for write, files shoulds be spread across different partitions
-	// the master process should open the blocks.json file for write, all children should tell master when a new block is added
-	// master should write the block record and let all other children know about it so that they can read data associate with it, block should be enhanced with file it is in
-	// inbound requests should be round-robined
-	
-	// key: {file: offset: size: }
-	
-	
 	const fs = require("fs"),
 		path = require('path'),
 		bytePadEnd = (str,length,encoding="utf8") => {
@@ -55,7 +44,6 @@
 				}
 			});
 		};
-	
 	function BlockStore(path,options={clear:false,encoding:"utf8",cache:true,compress:{keys:true,data:false}}) {
 		this.path = path;
 		this.opened = false;
@@ -69,10 +57,10 @@
 	BlockStore.prototype.clear = async function() {
 		this.close();
 		try {
-			fs.unlinkSync(this.path + "/blocks.json");
+			fs.truncateSync(this.path + "/blocks.json");
 		} catch(e) { true; } // ignore if not there
 		try {
-			fs.unlinkSync(this.path + "/store.json");
+			fs.truncateSync(this.path + "/store.json");
 		} catch(e) { true; } // ignore if not there
 		this.blocksSize = 0;
 		this.storeSize = 0;
@@ -80,14 +68,14 @@
 		this.keys = [];
 	}
 	// close is synchronous, it is called very little
-	BlockStore.prototype.close = function() {
+	BlockStore.prototype.close = async function() {
 		if(this.opened) {
 			this.opened = false;
 			fs.closeSync(this.blocksfd);
 			fs.closeSync(this.storefd);
 		}
 	}
-	BlockStore.prototype.count = async function count() {
+	BlockStore.prototype.count = async function() {
 		if(!this.opened) { await this.open(); }
 		return this.keys.length;
 	}
@@ -158,7 +146,7 @@
 		return false;
 	}
 	BlockStore.prototype.removeItem = BlockStore.prototype.delete;
-	BlockStore.prototype.flush = function(id) {
+	BlockStore.prototype.flush = async function(id) {
 		if(this.cache) {
 			let hits = 0;
 			if(id) {
@@ -210,7 +198,7 @@
 		return this.keys[number];
 	}
 	// it is called very little, so uses some synchronous functions for speed and simplicity
-	BlockStore.prototype.open = async function(readOnly) { // also add a transactional file class <file>.json, <file>.queue.json, <file>.<line> (line currently processing), <file>.done.json (lines processed)
+	BlockStore.prototype.open = async function(readOnly) {
 		if(this.opened) return;
 		const encoding = this.encoding;
 		let blocks = "";
