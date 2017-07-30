@@ -125,6 +125,8 @@ And, of course, perhaps someone can make this smaller and faster.
 
 # Release History (reverse chronological order)
 
+v0.1.5 2017-07-30 `open` made more robust, it now returns a Promise that may be shared among multiple open requests.
+
 v0.1.4 2017-07-29 Entire API now asynchronus to simplify usage and expose an interface compatible with distributed sharding/clustering. 
 
 v0.1.3 2017-07-28 Simplified architecture and API to increase speed and decrease both library and runtime memory usage by removing free space tracking and encoding arguments to functions other than constructor. Store keys will autocompress on start or command. `Blockstore` constructor now takes a location and an options object for arguments. Storage path is automatically

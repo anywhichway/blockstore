@@ -199,63 +199,70 @@
 	}
 	// it is called very little, so uses some synchronous functions for speed and simplicity
 	BlockStore.prototype.open = async function(readOnly) {
-		if(this.opened) return;
-		const encoding = this.encoding;
-		let blocks = "";
-		
-		// ensure directory exists
-		this.path
-		 .split(path.sep)
-		 .reduce((currentPath, folder) => {
-		   currentPath += folder + path.sep;
-		   if (!fs.existsSync(currentPath)){
-		     fs.mkdirSync(currentPath);
-		   }
-		   return currentPath;
-		 }, '');
-		if(fs.existsSync(this.path + "/blocks.json")) {
-			blocks = fs.readFileSync(this.path + "/blocks.json",encoding);  // {<id>:{start:start,end:end,length:length}[,...]}
-			blocks.trim();
+		const me = this;
+		if(me.opened) return;
+		if(me.opening) {
+			return me.opening
 		}
-		blocks.length===0 || (blocks = blocks.substring(0,blocks.length-1)); // remove trailing comma
-		try {
-			this.blocks = (blocks.length>0 ? JSON.parse("{" + blocks + "}") : {});
-		} catch(e) {
-			console.log(e,blocks);
-		}
-		this.keys = Object.keys(this.blocks);
-		if(readOnly) {
-			try {
-				this.storefd = fs.openSync(this.path + "/store.json","r");
-			} catch(e) {
-				this.storefd = fs.openSync(this.path + "/store.json","w");
-				fs.closeSync(this.storefd);
-				this.storefd = fs.openSync(this.path + "/store.json","r");
+		return me.opening = new Promise(async (resolve,reject) => {
+			const encoding = me.encoding;
+			let blocks = "";
+			
+			// ensure directory exists
+			me.path
+			 .split(path.sep)
+			 .reduce((currentPath, folder) => {
+			   currentPath += folder + path.sep;
+			   if (!fs.existsSync(currentPath)){
+			     fs.mkdirSync(currentPath);
+			   }
+			   return currentPath;
+			 }, '');
+			if(fs.existsSync(me.path + "/blocks.json")) {
+				blocks = fs.readFileSync(me.path + "/blocks.json",encoding);  // {<id>:{start:start,end:end,length:length}[,...]}
+				blocks.trim();
 			}
-		} else {
+			blocks.length===0 || (blocks = blocks.substring(0,blocks.length-1)); // remove trailing comma
 			try {
-				this.storefd = fs.openSync(this.path + "/store.json","r+");
+				me.blocks = (blocks.length>0 ? JSON.parse("{" + blocks + "}") : {});
 			} catch(e) {
-				this.storefd = fs.openSync(this.path + "/store.json","w+");
+				console.log(e);
 			}
-		}
-		const storestat = fs.fstatSync(this.storefd);
-		this.storeSize = storestat.size;
-		try {
-			this.blocksfd = fs.openSync(this.path + "/blocks.json","r+");
-		} catch(e) {
-			this.blocksfd = fs.openSync(this.path + "/blocks.json","w+");
-		}
-		const blockstat = fs.fstatSync(this.blocksfd);
-		this.blocksSize = blockstat.size;
-		const lastblock = this.blocks[this.keys[this.keys.length-1]];
-		if(!lastblock || (this.storeSize <= lastblock[2]+lastblock[3])) {
-			await asyncyInline(fs,fs.write,this.storefd,bytePadEnd(" ",1024*1000,encoding),this.storeSize,encoding);
-		} else if(lastblock) {
-			this.storeSize = lastblock[2]+lastblock[3];
-		}
-		this.opened = true;
-		return true;
+			me.keys = Object.keys(me.blocks);
+			if(readOnly) {
+				try {
+					me.storefd = fs.openSync(me.path + "/store.json","r");
+				} catch(e) {
+					me.storefd = fs.openSync(me.path + "/store.json","w");
+					fs.closeSync(me.storefd);
+					me.storefd = fs.openSync(me.path + "/store.json","r");
+				}
+			} else {
+				try {
+					me.storefd = fs.openSync(me.path + "/store.json","r+");
+				} catch(e) {
+					me.storefd = fs.openSync(me.path + "/store.json","w+");
+				}
+			}
+			const storestat = fs.fstatSync(me.storefd);
+			me.storeSize = storestat.size;
+			try {
+				me.blocksfd = fs.openSync(me.path + "/blocks.json","r+");
+			} catch(e) {
+				me.blocksfd = fs.openSync(me.path + "/blocks.json","w+");
+			}
+			const blockstat = fs.fstatSync(me.blocksfd);
+			me.blocksSize = blockstat.size;
+			const lastblock = me.blocks[me.keys[me.keys.length-1]];
+			if(!lastblock || (me.storeSize <= lastblock[2]+lastblock[3])) {
+				await asyncyInline(fs,fs.write,me.storefd,bytePadEnd(" ",1024*1000,encoding),me.storeSize,encoding);
+			} else if(lastblock) {
+				me.storeSize = lastblock[2]+lastblock[3];
+			}
+			me.opening = false;
+			me.opened = true;
+			resolve(true);
+		});
 	}
 	BlockStore.prototype.set = async function(id,data) {
 		if(id==null) return;
