@@ -129,11 +129,9 @@
 		fs.renameSync(this.path + "/compressing.blocks.json",this.path + "/blocks.json");
 		this.blocksfd = fs.openSync(this.path + "/blocks.json","r+");
 		stats = fs.fstatSync(this.blocksfd);
-		this.blocksSize = stats.size;
 		result.after.blocks = stats.size;
 		stats = fs.fstatSync(this.storefd);
 		result.after.store = stats.size;
-		this.storeSize = stats.size;
 		return result;
 	}
 	BlockStore.prototype.delete = async function(id) {
@@ -141,7 +139,7 @@
 		const encoding = this.encoding,
 			block = this.blocks[id];
 		if(block) {
-			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],encoding),block[2],encoding); // write null to erase key
+			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd('"null"',block[3],encoding),block[2],encoding); // write null to erase key
 			delete this.blocks[id];
 			this.keys = Object.keys(this.blocks);
 			this.keys.splice(this.keys.indexOf(id),1);
@@ -286,7 +284,7 @@
 		}
 		block = [(this.storeSize===0 ? 1 : this.storeSize+1), Buffer.byteLength(data,encoding)]; // allocate free block large enough
 		block.push(this.blocksSize); // store the offset of the key and its length with itself, we need this to erase keys
-		block.push(Buffer.byteLength(id,this.encoding)+2); // +2 for quotes
+		block.push(Math.max(Buffer.byteLength(id,this.encoding)+2,6)); // +2 for quotes, at least 6 for "null"
 		const blockspec = '"'+id+'":'+JSON.stringify(block)+",";
 		this.storeSize += block[1];
 		await asyncyInline(fs,fs.write,this.storefd,data,block[0],encoding); // write the data with blank padding

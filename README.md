@@ -125,6 +125,8 @@ And, of course, perhaps someone can make this smaller and faster.
 
 # Release History (reverse chronological order)
 
+v0.1.7 2017-08-08 `open` was setting files size to large if datafile already existed. Fixed.
+
 v0.1.6 2017-08-08 `delete` was writing at incorrect offset. Broke in v0.1.4, now fixed.
 
 v0.1.5 2017-07-30 `open` made more robust, it now returns a Promise that may be shared among multiple open requests.
