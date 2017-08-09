@@ -101,13 +101,17 @@
 				newblock = block.slice();
 			newblock[0] = this.storeSize;
 			newblock[2] = this.blocksSize;
-			let str = '"'+key+'":' + JSON.stringify(newblock)+",";
-			fs.writeSync(blocksfd,str,this.blocksSize,encoding); 
-			this.blocksSize += Buffer.byteLength(str,encoding);
+			if(key!=null) {
+				let str = '"'+key+'":' + JSON.stringify(newblock)+",";
+				fs.writeSync(blocksfd,str,this.blocksSize,encoding); 
+				this.blocksSize += Buffer.byteLength(str,encoding);
+			} else {
+				delete this.blocks[key];
+			}
 			if(!keysOnly) {
 				const buffer = Buffer.alloc(block[1]);
 				fs.readSync(this.storefd,buffer,0,block[1],block[0]);
-				str = buffer.toString(this.encoding);
+				let str = buffer.toString(this.encoding);
 				fs.writeSync(storefd,str,this.storeSize,encoding); 
 				this.storeSize += Buffer.byteLength(str,encoding);
 			}
@@ -125,9 +129,11 @@
 		fs.renameSync(this.path + "/compressing.blocks.json",this.path + "/blocks.json");
 		this.blocksfd = fs.openSync(this.path + "/blocks.json","r+");
 		stats = fs.fstatSync(this.blocksfd);
+		this.blocksSize = stats.size;
 		result.after.blocks = stats.size;
 		stats = fs.fstatSync(this.storefd);
 		result.after.store = stats.size;
+		this.storeSize = stats.size;
 		return result;
 	}
 	BlockStore.prototype.delete = async function(id) {
@@ -135,12 +141,10 @@
 		const encoding = this.encoding,
 			block = this.blocks[id];
 		if(block) {
-			const blanks = bytePadEnd("",block[1],encoding);
+			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd("null",block[3],encoding),block[2],encoding); // write null to erase key
 			delete this.blocks[id];
 			this.keys = Object.keys(this.blocks);
 			this.keys.splice(this.keys.indexOf(id),1);
-			//await asyncyInline(fs,fs.write,this.storefd,blanks,block[0],"utf8"); // write blanks to erase data
-			await asyncyInline(fs,fs.write,this.blocksfd,bytePadEnd(" ",block[3],this.encoding),block[2],encoding); // write blanks to erase key
 			return true;
 		}
 		return false;
@@ -287,7 +291,7 @@
 		this.storeSize += block[1];
 		await asyncyInline(fs,fs.write,this.storefd,data,block[0],encoding); // write the data with blank padding
 		// if we get a failure after here, worst case is block will point to the old value (which, in the interest of performance, we don't overwrite)
-		await asyncyInline(fs,fs.write,this.blocksfd,blockspec,this.blockSize,encoding); // write the block spec, i.e. key and offsets
+		await asyncyInline(fs,fs.write,this.blocksfd,blockspec,this.blocksSize,encoding); // write the block spec, i.e. key and offsets
 		!this.cache || Object.defineProperty(block,"cache",{enumerable:false,configurable:true,writable:true,value:{value:data,hits:0}});
 		this.blocks[id] = block;
 		this.blocksSize += Buffer.byteLength(blockspec,encoding); // update eof position
