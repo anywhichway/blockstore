@@ -1,6 +1,6 @@
 {
   "name": "blockstore",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "100% native JavaScript, block allocated high speed key/value file store",
   "engines": {},
   "license": "MIT",
